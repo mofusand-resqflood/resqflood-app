@@ -27,3 +27,19 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+
+# Android signing keys - NEVER COMMIT
+*.jks
+*.keystore
+key.properties
+
+# Environment variables and secrets
+.env
+
+# Firebase service account credentials
+firebase-service-account*.json
+
+# Local machine configuration
+local.properties
+
