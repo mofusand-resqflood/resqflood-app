@@ -30,3 +30,4 @@ doc/api/
 
 .env
 supabase/.env
+.env.json
