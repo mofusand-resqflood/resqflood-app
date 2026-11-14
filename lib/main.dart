@@ -21,7 +21,10 @@ Future<void> main() async {
   assert(_supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty,
       'Run with --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...');
 
-  await Supabase.initialize(url: _supabaseUrl, anonKey: _supabaseAnonKey);
+  await Supabase.initialize(
+  url: _supabaseUrl,
+  publishableKey: _supabaseAnonKey,
+);
 
   runApp(const ResQFloodApp());
 }
