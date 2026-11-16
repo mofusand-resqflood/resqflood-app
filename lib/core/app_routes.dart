@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/resident/auth/otp_verify_screen.dart';
 import '../features/resident/auth/sign_in_screen.dart';
 import '../features/resident/auth/sign_up_screen.dart';
 import '../features/resident/auth/welcome_screen.dart';
@@ -62,7 +63,7 @@ class AppRoutes {
     resident: (_) => const ResidentShell(),
 
     // Resident screens to be implemented by their assigned Jira stories
-    otp: _placeholder('Verify phone number'),
+    otp: (_) => const OtpVerifyScreen(),
     dashboard: _placeholder('Resident dashboard'),
     sosForm: _placeholder('Request help'),
     sosConfirmation: _placeholder('SOS confirmation'),
