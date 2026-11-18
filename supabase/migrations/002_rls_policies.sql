@@ -185,7 +185,7 @@ USING (
 )
 WITH CHECK (
   resident_id = (SELECT auth.uid())
-  AND status = 'cancelled'
+  AND status IN ('cancelled', 'closed')
 );
 
 -- There is intentionally no request DELETE policy.

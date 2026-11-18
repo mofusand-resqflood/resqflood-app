@@ -63,6 +63,8 @@ CREATE TABLE public.requests (
         'acknowledged',
         'assigned',
         'on_the_way',
+        'on_scene',
+        'transporting',
         'rescued',
         'closed',
         'cancelled'
@@ -171,7 +173,9 @@ CREATE TABLE public.shelters (
     CHECK (current_occupancy >= 0),
 
   status text NOT NULL DEFAULT 'open'
-    CHECK (status IN ('open', 'full', 'closed')),
+    CHECK (status IN ('open', 'nearly_full', 'full', 'closed')),
+
+  redirect_to uuid REFERENCES public.shelters (id) ON DELETE SET NULL,
 
   contact_phone text,
   created_at timestamptz NOT NULL DEFAULT now(),
