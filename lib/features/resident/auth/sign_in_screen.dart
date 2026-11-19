@@ -30,20 +30,21 @@ class _SignInScreenState extends State<SignInScreen> {
 
     setState(() => _isLoading = true);
 
-    final formattedPhone =
-    _authService.formatMalaysianPhone(_phoneController.text.trim());
+    final formattedPhone = _authService.formatMalaysianPhone(
+      _phoneController.text.trim(),
+    );
 
     try {
-      await _authService.sendOtp(phone: formattedPhone);
+      await _authService.sendOtp(
+        phone: formattedPhone,
+        shouldCreateUser: false,
+      );
 
       if (!mounted) return;
       Navigator.pushNamed(
         context,
         AppRoutes.otp,
-        arguments: OtpVerifyArgs(
-          phone: formattedPhone,
-          isSignUp: false,
-        ),
+        arguments: OtpVerifyArgs(phone: formattedPhone, isSignUp: false),
       );
     } on AuthException catch (e) {
       if (!mounted) return;
@@ -80,9 +81,8 @@ class _SignInScreenState extends State<SignInScreen> {
               children: [
                 Text(
                   'Welcome Back',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -110,13 +110,13 @@ class _SignInScreenState extends State<SignInScreen> {
                   onPressed: _isLoading ? null : _handleSignIn,
                   child: _isLoading
                       ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Send Verification Code'),
                 ),
               ],

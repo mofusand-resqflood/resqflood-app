@@ -74,6 +74,15 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       // AuthGate listens to onAuthStateChange and automatically switches
       // from WelcomeScreen to ResidentShell once we return to the root route.
       Navigator.of(context).popUntil((route) => route.isFirst);
+    } on ProfileSaveException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Your account was verified, but we couldn't save your details. Please try signing up again.",
+          ),
+        ),
+      );
     } on AuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -102,8 +111,9 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
     try {
       await _authService.sendOtp(
         phone: data.phone,
-        fullName: data.fullName,
-        homeAddress: data.homeAddress,
+        fullName: data.isSignUp ? data.fullName : null,
+        homeAddress: data.isSignUp ? data.homeAddress : null,
+        shouldCreateUser: data.isSignUp,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -111,9 +121,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to resend OTP: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to resend OTP: $e')));
     } finally {
       if (mounted) setState(() => _isResending = false);
     }
@@ -135,9 +144,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
               children: [
                 Text(
                   'Enter Verification Code',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -177,13 +185,13 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                   onPressed: _isVerifying ? null : _handleVerify,
                   child: _isVerifying
                       ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Verify & Continue'),
                 ),
                 const SizedBox(height: 12),
