@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.resqflood_app"
-    compileSdk = 37
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
