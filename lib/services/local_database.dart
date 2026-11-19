@@ -1,4 +1,3 @@
-
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -42,7 +41,7 @@ class LocalDatabase {
 
     final result = await db.rawQuery(
       "SELECT COUNT(*) AS total FROM offline_queue "
-          "WHERE status = ?",
+      "WHERE status = ?",
       ['pending'],
     );
 

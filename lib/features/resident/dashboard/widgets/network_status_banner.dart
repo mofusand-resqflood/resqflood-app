@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class NetworkStatusBanner extends StatelessWidget {
@@ -13,8 +12,9 @@ class NetworkStatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color statusColor =
-    isOnline ? Colors.green.shade700 : Colors.red.shade700;
+    final Color statusColor = isOnline
+        ? Colors.green.shade700
+        : Colors.red.shade700;
 
     return Container(
       width: double.infinity,

@@ -17,23 +17,23 @@ class WelcomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(t.appTitle,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displaySmall),
+              Text(
+                t.appTitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
               const SizedBox(height: 8),
               Text(t.welcomeTagline, textAlign: TextAlign.center),
               const SizedBox(height: 48),
               FilledButton(
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 56)),
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.signUp),
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.signUp),
                 child: Text(t.signUp),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56)),
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.signIn),
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.signIn),
                 child: Text(t.signIn),
               ),
             ],

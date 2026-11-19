@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import '../models/sos_request.dart';
@@ -9,8 +8,7 @@ class SosService {
 
   static final SosService instance = SosService._();
 
-  final OfflineQueueService _queueService =
-      OfflineQueueService.instance;
+  final OfflineQueueService _queueService = OfflineQueueService.instance;
 
   Future<int> submitRequest(SosRequest request) async {
     final payload = jsonEncode({
@@ -22,9 +20,6 @@ class SosService {
       'created_at': request.createdAt.toIso8601String(),
     });
 
-    return await _queueService.addToQueue(
-      requestType: 'sos',
-      payload: payload,
-    );
+    return await _queueService.addToQueue(requestType: 'sos', payload: payload);
   }
 }

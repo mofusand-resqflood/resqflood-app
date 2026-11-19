@@ -72,8 +72,11 @@ void main() {
       expect(location.longitude, closeTo(103.7414, 1e-9));
       expect(location.isLastKnown, isTrue);
       expect(location.capturedAt.toUtc(), captured);
-      expect(result.issue, isNotNull,
-          reason: 'the caller must still learn that live GPS failed');
+      expect(
+        result.issue,
+        isNotNull,
+        reason: 'the caller must still learn that live GPS failed',
+      );
     });
 
     test('reports an issue and no location when nothing is cached', () async {

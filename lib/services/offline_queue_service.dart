@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'local_database.dart';
@@ -11,7 +10,7 @@ class OfflineQueueService {
   final LocalDatabase _database = LocalDatabase.instance;
 
   final StreamController<int> _queueCountController =
-  StreamController<int>.broadcast();
+      StreamController<int>.broadcast();
 
   Stream<int> get queueCountStream => _queueCountController.stream;
 

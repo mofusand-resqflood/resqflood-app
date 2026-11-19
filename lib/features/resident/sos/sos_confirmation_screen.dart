@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../../../core/app_routes.dart';
@@ -21,19 +20,12 @@ class SosConfirmationScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.check_circle,
-                color: Colors.green.shade700,
-                size: 90,
-              ),
+              Icon(Icons.check_circle, color: Colors.green.shade700, size: 90),
               const SizedBox(height: 24),
               const Text(
                 'SOS Request Saved',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -53,8 +45,8 @@ class SosConfirmationScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const Text(
                 'This does not mean rescue services have received '
-                    'your request. If you are in immediate danger, '
-                    'contact the official emergency services directly.',
+                'your request. If you are in immediate danger, '
+                'contact the official emergency services directly.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14),
               ),
@@ -67,7 +59,7 @@ class SosConfirmationScreen extends StatelessWidget {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       AppRoutes.dashboard,
-                          (route) => false,
+                      (route) => false,
                     );
                   },
                   child: const Text('Back to Home'),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../../../core/app_routes.dart';
@@ -39,8 +38,7 @@ class _SosFormScreenState extends State<SosFormScreen> {
         createdAt: DateTime.now(),
       );
 
-      final requestId =
-      await SosService.instance.submitRequest(request);
+      final requestId = await SosService.instance.submitRequest(request);
 
       if (!mounted) return;
 
@@ -77,9 +75,7 @@ class _SosFormScreenState extends State<SosFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Request Emergency Help'),
-      ),
+      appBar: AppBar(title: const Text('Request Emergency Help')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -90,15 +86,12 @@ class _SosFormScreenState extends State<SosFormScreen> {
               children: [
                 const Text(
                   'Tell us what is happening',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 const Text(
                   'Provide your details so the response team can '
-                      'understand your situation.',
+                  'understand your situation.',
                 ),
                 const SizedBox(height: 24),
 
@@ -117,18 +110,12 @@ class _SosFormScreenState extends State<SosFormScreen> {
                       value: 'Flooding',
                       child: Text('Flooding'),
                     ),
-                    DropdownMenuItem(
-                      value: 'Trapped',
-                      child: Text('Trapped'),
-                    ),
+                    DropdownMenuItem(value: 'Trapped', child: Text('Trapped')),
                     DropdownMenuItem(
                       value: 'Medical emergency',
                       child: Text('Medical emergency'),
                     ),
-                    DropdownMenuItem(
-                      value: 'Other',
-                      child: Text('Other'),
-                    ),
+                    DropdownMenuItem(value: 'Other', child: Text('Other')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
