@@ -31,8 +31,3 @@ doc/api/
 .env
 supabase/.env
 .env.json
-
-# Supabase local development files
-supabase/.branches/
-supabase/.temp/
-supabase/snippets/

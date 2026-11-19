@@ -1,9 +1,4 @@
-import '../features/resident/sos/sos_form_screen.dart';
-import '../features/resident/sos/sos_confirmation_screen.dart';
-
 import 'package:flutter/material.dart';
-
-import '../features/resident/dashboard/dashboard_screen.dart';
 
 import '../features/resident/auth/sign_in_screen.dart';
 import '../features/resident/auth/sign_up_screen.dart';
@@ -68,9 +63,9 @@ class AppRoutes {
 
     // Resident screens to be implemented by their assigned Jira stories
     otp: _placeholder('Verify phone number'),
-    dashboard: (_) => const DashboardScreen(),
-    sosForm: (_) => const SosFormScreen(),
-    sosConfirmation: (_) => const SosConfirmationScreen(),
+    dashboard: _placeholder('Resident dashboard'),
+    sosForm: _placeholder('Request help'),
+    sosConfirmation: _placeholder('SOS confirmation'),
     activeRequest: _placeholder('Active rescue request'),
     shelterQrPass: _placeholder('Shelter QR pass'),
     nearby: _placeholder('Help around you'),
