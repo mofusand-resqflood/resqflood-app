@@ -1,5 +1,8 @@
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import '../../services/offline_queue_service.dart';
 
 class ResidentShell extends StatefulWidget {
   const ResidentShell({super.key});
@@ -10,62 +13,86 @@ class ResidentShell extends StatefulWidget {
 
 class _ResidentShellState extends State<ResidentShell> {
   int _selectedIndex = 0;
+  int _queueCount = 0;
 
-  // Temporary count until the offline queue service is integrated.
-  final int _queueCount = 0;
+  late final StreamSubscription<int> _queueCountSubscription;
 
-  static const Color paleMint = Color(0xFFE5F3EE);
-  static const Color borderMint = Color(0xFFD0E7DE);
+  @override
+  void initState() {
+    super.initState();
 
-  late final List<Widget> _pages = [
+    final queueService = OfflineQueueService.instance;
+
+    _queueCountSubscription = queueService.queueCountStream.listen((count) {
+      if (mounted) {
+        setState(() {
+          _queueCount = count;
+        });
+      }
+    });
+
+    unawaited(queueService.refreshQueueCount());
+  }
+
+  @override
+  void dispose() {
+    unawaited(_queueCountSubscription.cancel());
+    super.dispose();
+  }
+
+  List<Widget> get _pages => [
     const _TabPlaceholder(title: 'Home', icon: Icons.home_outlined),
-    const _TabPlaceholder(title: 'Track', icon: Icons.route_outlined),
     const _TabPlaceholder(title: 'Nearby', icon: Icons.location_on_outlined),
-    const _TabPlaceholder(
-      title: 'Assistant',
-      icon: Icons.chat_bubble_outline,
-    ),
-    _ProfilePlaceholder(queueCount: _queueCount),
+    const _TabPlaceholder(title: 'Ask', icon: Icons.chat_bubble_outline),
+    _SyncTab(queueCount: _queueCount),
+    const _TabPlaceholder(title: 'Profile', icon: Icons.person_outline),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: paleMint,
-        indicatorColor: borderMint,
+        backgroundColor: colors.surfaceContainerHighest,
+        indicatorColor: colors.secondaryContainer,
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.route_outlined),
-            selectedIcon: Icon(Icons.route),
-            label: 'Track',
-          ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.location_on_outlined),
             selectedIcon: Icon(Icons.location_on),
             label: 'Nearby',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.chat_bubble_outline),
             selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Assistant',
+            label: 'Ask',
           ),
           NavigationDestination(
+            icon: Badge(
+              isLabelVisible: _queueCount > 0,
+              label: Text('$_queueCount'),
+              child: const Icon(Icons.sync_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: _queueCount > 0,
+              label: Text('$_queueCount'),
+              child: const Icon(Icons.sync),
+            ),
+            label: 'Sync',
+          ),
+          const NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profile',
@@ -77,53 +104,44 @@ class _ResidentShellState extends State<ResidentShell> {
 }
 
 class _TabPlaceholder extends StatelessWidget {
-  const _TabPlaceholder({
-    required this.title,
-    required this.icon,
-  });
+  const _TabPlaceholder({required this.title, required this.icon});
 
   final String title;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 64, color: const Color(0xFF164E48)),
+          Icon(icon, size: 64, color: colors.primary),
           const SizedBox(height: 16),
-          Text(
-            '$title Tab',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text('$title Tab', style: Theme.of(context).textTheme.headlineSmall),
         ],
       ),
     );
   }
 }
 
-class _ProfilePlaceholder extends StatelessWidget {
-  const _ProfilePlaceholder({required this.queueCount});
+class _SyncTab extends StatelessWidget {
+  const _SyncTab({required this.queueCount});
 
   final int queueCount;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.person_outline,
-            size: 64,
-            color: Color(0xFF164E48),
-          ),
+          Icon(Icons.sync, size: 64, color: colors.primary),
           const SizedBox(height: 16),
-          Text(
-            'Profile Tab',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text('Sync Tab', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 24),
           Card(
             child: Padding(
@@ -131,13 +149,17 @@ class _ProfilePlaceholder extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.sync, color: Color(0xFF164E48)),
+                  Icon(
+                    queueCount == 0
+                        ? Icons.cloud_done_outlined
+                        : Icons.cloud_upload_outlined,
+                    color: colors.primary,
+                  ),
                   const SizedBox(width: 12),
-                  const Text('Sync Status'),
-                  const SizedBox(width: 16),
-                  Badge(
-                    label: Text('$queueCount'),
-                    child: const Icon(Icons.cloud_upload_outlined),
+                  Text(
+                    queueCount == 0
+                        ? 'All data synced'
+                        : '$queueCount item(s) waiting to sync',
                   ),
                 ],
               ),
