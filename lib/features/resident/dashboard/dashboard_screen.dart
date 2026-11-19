@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../services/connectivity_service.dart';
-import '../../../../services/local_database.dart';
-import '../../../../services/offline_queue_service.dart';
+import '../../../services/connectivity_service.dart';
+import '../../../services/local_database.dart';
+import '../../../services/offline_queue_service.dart';
 import 'widgets/network_status_banner.dart';
 import 'widgets/quick_actions_grid.dart';
 import 'widgets/sos_button.dart';
