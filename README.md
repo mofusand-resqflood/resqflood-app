@@ -2,7 +2,7 @@
 
 ResQFlood is a Flutter application for flood emergency coordination in Malaysia. The project has three planned user roles: Residents, First Responders, and Shelter Managers.
 
-This repository currently focuses on the **Resident** role. Some screens and routes are placeholders until their assigned Jira stories are implemented. Do not treat placeholder screens or sample data as production-ready emergency services.
+The **Resident** role is implemented first. The **Responder** and **Shelter Manager** roles are currently in progress, with placeholder files prepared for their upcoming implementations. Some screens and routes are placeholders until their assigned Jira stories are implemented. Do not treat placeholder screens or sample data as production-ready emergency services.
 
 ## Technology
 
@@ -149,6 +149,14 @@ flutter test
 All checks should complete successfully before creating a pull request.
 
 Some test files may contain temporary placeholder tests while their corresponding features are still under development. Replace these with actual test cases when implementing the relevant features.
+
+### Running on Windows (PowerShell)
+
+With `.env.json` in the project root, run:
+
+```powershell
+.\run_resqflood.ps1
+```
 
 ## Jira branch and pull-request workflow
 
