@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,11 +17,6 @@ final ValueNotifier<Locale> appLocale = ValueNotifier(const Locale('en'));
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (Platform.isWindows || Platform.isLinux) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
 
   assert(_supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty,
       'Run with --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...');
