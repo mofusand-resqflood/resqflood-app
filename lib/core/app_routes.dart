@@ -85,7 +85,7 @@ class AppRoutes {
     smsUpdate: _placeholder('Emergency SMS update'),
     downloadMyArea: _placeholder('Download my area'),
     profile: _placeholder('Resident profile'),
-    householdEdit: (_) => const HouseholdProfileScreen(),
+    householdEdit: _placeholder('Edit household profile'),
     emergencyContacts: _placeholder('Emergency contacts'),
     accessibilitySettings: _placeholder('Accessibility settings'),
   };

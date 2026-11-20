@@ -74,7 +74,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       if (!mounted) return;
       // AuthGate listens to onAuthStateChange and automatically switches
       // from WelcomeScreen to ResidentShell once we return to the root route.
-if (data.isSignUp) {
+      if (data.isSignUp) {
         Navigator.of(context).pushNamedAndRemoveUntil(
           AppRoutes.householdProfile,
           (route) => route.isFirst,
@@ -176,7 +176,7 @@ if (data.isSignUp) {
                     fontWeight: FontWeight.bold,
                   ),
                   decoration: const InputDecoration(
-                    hintText: 'â€¢â€¢â€¢â€¢â€¢â€¢',
+                    hintText: '\u2022\u2022\u2022\u2022\u2022\u2022',
                     counterText: '',
                     border: OutlineInputBorder(),
                   ),

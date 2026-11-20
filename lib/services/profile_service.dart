@@ -18,22 +18,14 @@ class ProfileService {
       throw Exception('The profile does not belong to the signed-in user.');
     }
 
-    final existing = await _supabase
+    final updated = await _supabase
         .from('profiles')
-        .select('id')
+        .update(profile.householdProfile.toJson())
         .eq('id', user.id)
-        .maybeSingle();
+        .select('id');
 
-    if (existing == null) {
-      await _supabase.from('profiles').insert({
-        'id': profile.id,
-        ...profile.householdProfile.toJson(),
-      });
-    } else {
-      await _supabase
-          .from('profiles')
-          .update(profile.householdProfile.toJson())
-          .eq('id', user.id);
+    if (updated.isEmpty) {
+      throw Exception('No profile found for this account.');
     }
   }
 

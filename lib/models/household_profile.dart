@@ -24,8 +24,8 @@ class HouseholdProfile {
       'elderly': elderly,
       'children': children,
       'disabled': disabled,
-      'medical_notes': medicalNotes,
-      'mobility_notes': mobilityNotes,
+      'medical_notes': medicalNotes.trim(),
+      'mobility_notes': mobilityNotes.trim(),
     };
   }
 
