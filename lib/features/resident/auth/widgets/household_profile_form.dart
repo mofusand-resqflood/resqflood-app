@@ -59,13 +59,17 @@ class _HouseholdProfileFormState extends State<HouseholdProfileForm> {
     _children = widget.initialValue.children;
     _disabled = widget.initialValue.disabled;
 
-    if (_medicalNotesController.text != widget.initialValue.medicalNotes) {
+    if (oldWidget.initialValue.medicalNotes !=
+            widget.initialValue.medicalNotes &&
+        _medicalNotesController.text != widget.initialValue.medicalNotes) {
       _medicalNotesController.removeListener(_notifyChanged);
       _medicalNotesController.text = widget.initialValue.medicalNotes;
       _medicalNotesController.addListener(_notifyChanged);
     }
 
-    if (_mobilityNotesController.text != widget.initialValue.mobilityNotes) {
+    if (oldWidget.initialValue.mobilityNotes !=
+            widget.initialValue.mobilityNotes &&
+        _mobilityNotesController.text != widget.initialValue.mobilityNotes) {
       _mobilityNotesController.removeListener(_notifyChanged);
       _mobilityNotesController.text = widget.initialValue.mobilityNotes;
       _mobilityNotesController.addListener(_notifyChanged);
@@ -88,8 +92,8 @@ class _HouseholdProfileFormState extends State<HouseholdProfileForm> {
         elderly: _elderly,
         children: _children,
         disabled: _disabled,
-        medicalNotes: _medicalNotesController.text.trim(),
-        mobilityNotes: _mobilityNotesController.text.trim(),
+        medicalNotes: _medicalNotesController.text,
+        mobilityNotes: _mobilityNotesController.text,
       ),
     );
   }

@@ -58,6 +58,56 @@ void main() {
       expect(updates.last.adults, 1);
     });
 
+    testWidgets(
+      'preserves trailing spaces when parent rebuilds after notes change',
+      (tester) async {
+        var profile = const HouseholdProfile();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: StatefulBuilder(
+              builder: (context, setState) {
+                return Scaffold(
+                  body: SingleChildScrollView(
+                    child: HouseholdProfileForm(
+                      initialValue: profile,
+                      onChanged: (updatedProfile) {
+                        setState(() {
+                          profile = updatedProfile;
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        final medicalField = find.byType(TextField).at(0);
+        await tester.ensureVisible(medicalField);
+        await tester.enterText(medicalField, 'Needs medication ');
+        await tester.pump();
+
+        expect(profile.medicalNotes, 'Needs medication ');
+        expect(
+          tester.widget<TextField>(medicalField).controller!.text,
+          'Needs medication ',
+        );
+
+        final mobilityField = find.byType(TextField).at(1);
+        await tester.ensureVisible(mobilityField);
+        await tester.enterText(mobilityField, 'Needs wheelchair ');
+        await tester.pump();
+
+        expect(profile.mobilityNotes, 'Needs wheelchair ');
+        expect(
+          tester.widget<TextField>(mobilityField).controller!.text,
+          'Needs wheelchair ',
+        );
+      },
+    );
+
     testWidgets('medical notes text change emits updated profile', (
       tester,
     ) async {

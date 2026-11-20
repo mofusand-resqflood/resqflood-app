@@ -18,10 +18,23 @@ class ProfileService {
       throw Exception('The profile does not belong to the signed-in user.');
     }
 
-    await _supabase.from('profiles').upsert({
-      'id': profile.id,
-      ...profile.householdProfile.toJson(),
-    });
+    final existing = await _supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (existing == null) {
+      await _supabase.from('profiles').insert({
+        'id': profile.id,
+        ...profile.householdProfile.toJson(),
+      });
+    } else {
+      await _supabase
+          .from('profiles')
+          .update(profile.householdProfile.toJson())
+          .eq('id', user.id);
+    }
   }
 
   // Load the profile belonging to the signed-in resident.
