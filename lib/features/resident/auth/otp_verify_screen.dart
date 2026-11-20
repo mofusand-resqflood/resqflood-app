@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/app_routes.dart';
 import '../../../services/phone_auth_service.dart';
 
 class OtpVerifyArgs {
@@ -73,7 +74,14 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       if (!mounted) return;
       // AuthGate listens to onAuthStateChange and automatically switches
       // from WelcomeScreen to ResidentShell once we return to the root route.
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      if (data.isSignUp) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.householdProfile,
+          (route) => route.isFirst,
+        );
+      } else {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } on ProfileSaveException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -168,7 +176,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                   decoration: const InputDecoration(
-                    hintText: '••••••',
+                    hintText: '\u2022\u2022\u2022\u2022\u2022\u2022',
                     counterText: '',
                     border: OutlineInputBorder(),
                   ),
