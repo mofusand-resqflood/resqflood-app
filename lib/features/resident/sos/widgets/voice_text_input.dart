@@ -14,7 +14,8 @@ class VoiceTextInput extends StatefulWidget {
     this.controller,
     this.onChanged,
     this.labelText = 'Emergency Description',
-    this.hintText = 'Describe your situation or tap the mic to speak (BM / EN)...',
+    this.hintText =
+        'Describe your situation or tap the mic to speak (BM / EN)...',
   });
 
   @override
@@ -75,12 +76,13 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
     }
 
     final hasPermission = await _speechToText.hasPermission;
+    if (!mounted) return;
     if (!hasPermission || !_speechAvailable) {
-      _speechAvailable = false; // Allow retry if user grants permission in settings
+      _speechAvailable =
+          false; // Allow retry if user grants permission in settings
       setState(() {
         _isError = true;
-        _statusMessage =
-        'Microphone permission denied or speech service unavailable. Please enable mic access in Settings or type manually.';
+        _statusMessage = 'Microphone permission denied or speech service unavailable. Please enable mic access in Settings or type manually.';
       });
       return;
     }
@@ -93,15 +95,15 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
       _isError = false;
       _livePartialTranscript = '';
       _statusMessage =
-      'Listening (${_selectedLocaleId == 'ms_MY' ? 'BM' : 'EN'})... Speak now.';
+          'Listening (${_selectedLocaleId == 'ms_MY' ? 'BM' : 'EN'})... Speak now.';
     });
 
     await _speechToText.listen(
       onResult: _onSpeechResult,
-      localeId: _selectedLocaleId,
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 4),
       listenOptions: SpeechListenOptions(
+        localeId: _selectedLocaleId,
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 4),
         partialResults: true,
         cancelOnError: true,
         listenMode: ListenMode.dictation,
@@ -117,7 +119,8 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
       if (_livePartialTranscript.isEmpty &&
           _statusMessage?.startsWith('Listening') == true) {
         _isError = true;
-        _statusMessage = 'No speech detected. Please tap the mic and speak clearly.';
+        _statusMessage =
+            'No speech detected. Please tap the mic and speak clearly.';
       } else if (!_isError) {
         _statusMessage = null;
       }
@@ -132,8 +135,8 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
     final combined = _baseTextBeforeSpeech.isEmpty
         ? spoken
         : (spoken.isEmpty
-        ? _baseTextBeforeSpeech
-        : '$_baseTextBeforeSpeech $spoken');
+              ? _baseTextBeforeSpeech
+              : '$_baseTextBeforeSpeech $spoken');
 
     setState(() {
       _livePartialTranscript = spoken;
@@ -177,7 +180,8 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
     if (!mounted) return;
     final msg = error.errorMsg.toLowerCase();
     final isPermissionDenied = msg.contains('permission');
-    final isNoSpeech = msg.contains('no_match') ||
+    final isNoSpeech =
+        msg.contains('no_match') ||
         msg.contains('speech_timeout') ||
         msg.contains('no_speech');
 
@@ -190,14 +194,13 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
       _livePartialTranscript = '';
       _isError = true;
       if (isPermissionDenied) {
-        _statusMessage =
-        'Microphone permission denied. Please allow mic access in Android Settings or type manually.';
+        _statusMessage = 'Microphone permission denied. Please allow mic access in Android Settings or type manually.';
       } else if (isNoSpeech) {
         _statusMessage =
-        'No speech detected. Please speak closer to the microphone.';
+            'No speech detected. Please speak closer to the microphone.';
       } else {
         _statusMessage =
-        'Speech error (${error.errorMsg}). You can type your message directly.';
+            'Speech error (${error.errorMsg}). You can type your message directly.';
       }
     });
   }
@@ -214,8 +217,10 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
           children: [
             const Icon(Icons.language, size: 18),
             const SizedBox(width: 8),
-            const Text('Voice Language:',
-                style: TextStyle(fontWeight: FontWeight.w500)),
+            const Text(
+              'Voice Language:',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
             const SizedBox(width: 12),
             ChoiceChip(
               key: const Key('locale_bm_chip'),
@@ -292,7 +297,9 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.red),
+                    strokeWidth: 2,
+                    color: Colors.red,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -301,7 +308,9 @@ class _VoiceTextInputState extends State<VoiceTextInput> {
                         ? 'Listening... speak now'
                         : 'Live: "$_livePartialTranscript"',
                     style: const TextStyle(
-                        fontSize: 13, fontStyle: FontStyle.italic),
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
               ],

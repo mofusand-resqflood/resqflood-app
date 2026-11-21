@@ -1,5 +1,6 @@
 name: resqflood_app
-description: "A new Flutter project."
+description: "ResQFlood - flood emergency coordination app for Malaysia."
+
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -53,6 +54,7 @@ dependencies:
   qr_flutter: ^4.1.0
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
