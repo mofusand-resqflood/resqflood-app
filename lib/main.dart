@@ -18,13 +18,15 @@ final ValueNotifier<Locale> appLocale = ValueNotifier(const Locale('en'));
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  assert(_supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty,
-      'Run with --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...');
+  assert(
+    _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty,
+    'Run with --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...',
+  );
 
   await Supabase.initialize(
-  url: _supabaseUrl,
-  publishableKey: _supabaseAnonKey,
-);
+    url: _supabaseUrl,
+    publishableKey: _supabaseAnonKey,
+  );
 
   runApp(const ResQFloodApp());
 }
