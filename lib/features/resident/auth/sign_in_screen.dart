@@ -48,10 +48,26 @@ class _SignInScreenState extends State<SignInScreen> {
       );
     } on AuthException catch (e) {
       if (!mounted) return;
+      final isNoAccount = e.message.toLowerCase().contains('signups not allowed') ||
+          e.message.toLowerCase().contains('user not found');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.message),
+          content: Text(
+            isNoAccount
+                ? 'No account found for this number. Sign up first.'
+                : e.message,
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
+          action: isNoAccount
+              ? SnackBarAction(
+            label: 'Sign Up',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, AppRoutes.signUp);
+            },
+          )
+              : null,
         ),
       );
     } catch (e) {
