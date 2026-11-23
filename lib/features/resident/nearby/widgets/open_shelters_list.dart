@@ -3,11 +3,11 @@ import '../../../../models/shelter.dart';
 import '../../../../services/nearby_service.dart';
 
 class OpenSheltersList extends StatelessWidget {
-  const OpenSheltersList({super.key}); // 👈 Changed to const
+  const OpenSheltersList({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final _service = NearbyService(); // 👈 Moved here
+    final _service = NearbyService();
 
     return StreamBuilder<List<Shelter>>(
       stream: _service.getOpenShelters(),
@@ -45,7 +45,11 @@ class OpenSheltersList extends StatelessWidget {
             const Text('Open Shelters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             if (isOffline) ...[
               const SizedBox(width: 8),
-              const Chip(label: Text('Offline', style: TextStyle(fontSize: 10)), backgroundColor: Colors.orange),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(4)),
+                child: const Text('Offline', style: TextStyle(color: Colors.white, fontSize: 10)),
+              )
             ]
           ],
         ),
@@ -67,6 +71,22 @@ class OpenSheltersList extends StatelessWidget {
                   children: [
                     Text(shelter.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     Text(shelter.address, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+
+                    const SizedBox(height: 8),
+
+                    // 👇 THIS SHOWS THE DISTANCE 👇
+                    if (shelter.distance != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.directions_car, size: 14, color: Colors.blue),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${(shelter.distance! / 1000).toStringAsFixed(1)} km away',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue),
+                          ),
+                        ],
+                      ),
+
                     const SizedBox(height: 12),
 
                     // Capacity Bar
@@ -83,6 +103,7 @@ class OpenSheltersList extends StatelessWidget {
                       backgroundColor: Colors.grey.shade300,
                       color: capacityRatio > 0.8 ? Colors.red : Colors.green,
                       minHeight: 8,
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ],
                 ),

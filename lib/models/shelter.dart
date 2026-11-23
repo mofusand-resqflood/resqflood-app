@@ -7,6 +7,7 @@ class Shelter {
   final int capacity;
   final int currentOccupancy;
   final String status;
+  final double? distance; // Optional field for UI
 
   Shelter({
     required this.id,
@@ -17,11 +18,13 @@ class Shelter {
     required this.capacity,
     required this.currentOccupancy,
     required this.status,
+    this.distance,
   });
 
   int get freePlaces => capacity - currentOccupancy;
 
-  factory Shelter.fromJson(Map<String, dynamic> json) {
+  // Notice the {double? distance} here
+  factory Shelter.fromJson(Map<String, dynamic> json, {double? distance}) {
     return Shelter(
       id: json['id'] ?? '',
       name: json['name'] ?? 'Unknown Shelter',
@@ -31,6 +34,7 @@ class Shelter {
       capacity: (json['capacity'] ?? 0).toInt(),
       currentOccupancy: (json['current_occupancy'] ?? 0).toInt(),
       status: json['status'] ?? 'closed',
+      distance: distance,
     );
   }
 

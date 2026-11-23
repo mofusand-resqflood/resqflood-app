@@ -8,48 +8,45 @@ class NearbyService {
   static const _cacheKey = 'cached_open_shelters';
 
   Future<Position?> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return null;
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return null;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return null;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return null;
+      }
+
+      return await Geolocator.getCurrentPosition();
+    } catch (e) {
+      return null;
     }
-
-    // Note: For Flutter Web/Chrome, this might prompt the browser for location
-    return await Geolocator.getCurrentPosition();
   }
 
   Stream<List<Shelter>> getOpenShelters() async* {
     final userLocation = await _getCurrentLocation();
 
-    // Fallback to Shah Alam if location fails (useful for testing)
+    // Fallback to Shah Alam if location fails
     final double userLat = userLocation?.latitude ?? 3.0738;
     final double userLng = userLocation?.longitude ?? 101.5183;
 
-    // Stream from Supabase where status is 'open'
     final stream = Supabase.instance.client
         .from('shelters')
         .stream(primaryKey: ['id'])
         .eq('status', 'open')
-        .map((data) {
-      final shelters = data.map((json) => Shelter.fromJson(json)).toList();
+        .map<List<Shelter>>((data) { // 👈 EXPLICIT TYPE HERE
+      final List<Shelter> shelters = data.map<Shelter>((json) { // 👈 EXPLICIT TYPE HERE
+        final double lat = (json['latitude'] ?? 0.0).toDouble();
+        final double lng = (json['longitude'] ?? 0.0).toDouble();
 
-      // Calculate distance for each shelter
-      for (var shelter in shelters) {
-        final distance = Geolocator.distanceBetween(
-            userLat, userLng, shelter.latitude, shelter.longitude
-        );
-        // We can add distance to the shelter object or sort directly
-      }
+        final dist = Geolocator.distanceBetween(userLat, userLng, lat, lng);
+
+        return Shelter.fromJson(json, distance: dist);
+      }).toList();
 
       // Sort by distance
-      shelters.sort((a, b) {
-        final distA = Geolocator.distanceBetween(userLat, userLng, a.latitude, a.longitude);
-        final distB = Geolocator.distanceBetween(userLat, userLng, b.latitude, b.longitude);
-        return distA.compareTo(distB);
-      });
+      shelters.sort((a, b) => (a.distance ?? 0).compareTo(b.distance ?? 0));
 
       _cacheShelters(shelters);
       return shelters;
