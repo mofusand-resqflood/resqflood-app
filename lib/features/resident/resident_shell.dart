@@ -1,8 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../services/offline_queue_service.dart';
+import 'dashboard/dashboard_screen.dart'; // 👈 MAKE SURE THIS IMPORT IS HERE
+import 'nearby/nearby_screen.dart';       // 👈 MAKE SURE THIS IMPORT IS HERE
 
 class ResidentShell extends StatefulWidget {
   const ResidentShell({super.key});
@@ -41,8 +42,8 @@ class _ResidentShellState extends State<ResidentShell> {
   }
 
   List<Widget> get _pages => [
-    const _TabPlaceholder(title: 'Home', icon: Icons.home_outlined),
-    const _TabPlaceholder(title: 'Nearby', icon: Icons.location_on_outlined),
+    const DashboardScreen(), // 👈 REMOVED THE DUPLICATE COMMENT
+    const NearbyScreen(),    // 👈 REMOVED THE DUPLICATE COMMENT
     const _TabPlaceholder(title: 'Ask', icon: Icons.chat_bubble_outline),
     _SyncTab(queueCount: _queueCount),
     const _TabPlaceholder(title: 'Profile', icon: Icons.person_outline),
