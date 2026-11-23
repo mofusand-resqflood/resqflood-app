@@ -18,12 +18,14 @@ class Announcement {
   // Convert from Supabase JSON
   factory Announcement.fromJson(Map<String, dynamic> json) {
     return Announcement(
-      id: json['id'],
-      title: json['title'],
-      message: json['body'],
-      authorName: json['created_by'],
-      authorRole: json['author_role'],
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id']?.toString() ?? 'unknown_id',
+      title: json['title']?.toString() ?? 'No Title',
+      message: json['body']?.toString() ?? 'No message provided.',
+      authorName: 'Coordinator', // Hardcoded since created_by is a UUID
+      authorRole: 'Coordinator',
+      createdAt: json['published_at'] != null
+          ? DateTime.parse(json['published_at'].toString())
+          : DateTime.now(),
     );
   }
 
@@ -32,10 +34,8 @@ class Announcement {
     return {
       'id': id,
       'title': title,
-      'message': message,
-      'author_name': authorName,
-      'author_role': authorRole,
-      'created_at': createdAt.toIso8601String(),
+      'body': message,
+      'published_at': createdAt.toIso8601String(),
     };
   }
 }
