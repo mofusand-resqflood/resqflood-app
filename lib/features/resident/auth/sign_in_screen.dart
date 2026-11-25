@@ -54,7 +54,12 @@ class _SignInScreenState extends State<SignInScreen> {
     } on AuthException catch (e) {
       if (!mounted) return;
 
-      if (e.code == 'user_not_found') {
+      final isUnknownAccount =
+          e.code == 'user_not_found' ||
+          (e.code == 'otp_disabled' &&
+              e.message.toLowerCase().contains('signups not allowed for otp'));
+
+      if (isUnknownAccount) {
         setState(() => _accountNotFound = true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

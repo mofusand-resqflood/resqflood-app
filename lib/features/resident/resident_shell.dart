@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'profile/profile_screen.dart';
+
 import '../../services/offline_queue_service.dart';
 
 class ResidentShell extends StatefulWidget {
@@ -45,7 +47,7 @@ class _ResidentShellState extends State<ResidentShell> {
     const _TabPlaceholder(title: 'Nearby', icon: Icons.location_on_outlined),
     const _TabPlaceholder(title: 'Ask', icon: Icons.chat_bubble_outline),
     _SyncTab(queueCount: _queueCount),
-    const _TabPlaceholder(title: 'Profile', icon: Icons.person_outline),
+    const ProfileScreen(),
   ];
 
   @override
