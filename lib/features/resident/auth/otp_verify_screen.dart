@@ -1,63 +1,219 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/app_routes.dart';
+import '../../../services/phone_auth_service.dart';
+
+class OtpVerifyArgs {
+  final String phone;
+  final String? fullName;
+  final String? homeAddress;
+  final bool isSignUp;
+
+  const OtpVerifyArgs({
+    required this.phone,
+    this.fullName,
+    this.homeAddress,
+    this.isSignUp = false,
+  });
+}
+
 class OtpVerifyScreen extends StatefulWidget {
-  final String phoneNumber;
-  const OtpVerifyScreen({super.key, required this.phoneNumber});
+  final OtpVerifyArgs? args;
+
+  const OtpVerifyScreen({super.key, this.args});
 
   @override
   State<OtpVerifyScreen> createState() => _OtpVerifyScreenState();
 }
 
 class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _otpController = TextEditingController();
-  bool _isLoading = false;
+  final _authService = PhoneAuthService();
 
-  Future<void> _verifyOtp() async {
-    setState(() => _isLoading = true);
+  bool _isVerifying = false;
+  bool _isResending = false;
+
+  OtpVerifyArgs get _resolvedArgs {
+    if (widget.args != null) return widget.args!;
+    final routeArgs = ModalRoute.of(context)?.settings.arguments;
+    if (routeArgs is OtpVerifyArgs) return routeArgs;
+    if (routeArgs is Map<String, dynamic>) {
+      return OtpVerifyArgs(
+        phone: routeArgs['phone'] as String? ?? '',
+        fullName: routeArgs['fullName'] as String?,
+        homeAddress: routeArgs['homeAddress'] as String?,
+        isSignUp: routeArgs['isSignUp'] as bool? ?? false,
+      );
+    }
+    return const OtpVerifyArgs(phone: '');
+  }
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleVerify() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final data = _resolvedArgs;
+    setState(() => _isVerifying = true);
+
     try {
-      final response = await Supabase.instance.client.auth.verifyOTP(
-        phone: widget.phoneNumber,
+      await _authService.verifyOtp(
+        phone: data.phone,
         token: _otpController.text.trim(),
-        type: OtpType.sms,
+        fullName: data.isSignUp ? data.fullName : null,
+        homeAddress: data.isSignUp ? data.homeAddress : null,
       );
 
-      if (response.session != null) {
-        // Success! Just pop back to the root (AuthGate).
-        // AuthGate will automatically detect the session and route the user
-        // to the Dashboard (or the NoProfileScreen if they are new).
-        if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid OTP: ${e.message}'), backgroundColor: Colors.red),
+      if (!mounted) return;
+      // AuthGate listens to onAuthStateChange and automatically switches
+      // from WelcomeScreen to ResidentShell once we return to the root route.
+      if (data.isSignUp) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.householdProfile,
+          (route) => route.isFirst,
         );
+      } else {
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
+    } on ProfileSaveException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Your account was verified, but we couldn't save your details. Please try signing up again.",
+          ),
+        ),
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Verification failed: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isVerifying = false);
+    }
+  }
+
+  Future<void> _handleResend() async {
+    final data = _resolvedArgs;
+    setState(() => _isResending = true);
+
+    try {
+      await _authService.sendOtp(
+        phone: data.phone,
+        fullName: data.isSignUp ? data.fullName : null,
+        homeAddress: data.isSignUp ? data.homeAddress : null,
+        shouldCreateUser: data.isSignUp,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('New verification code sent to ${data.phone}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to resend OTP: $e')));
+    } finally {
+      if (mounted) setState(() => _isResending = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final data = _resolvedArgs;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Enter OTP')),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _otpController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'OTP'),
+      appBar: AppBar(title: const Text('Verify Phone Number')),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Enter Verification Code',
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Enter the 6-digit SMS code sent to ${data.phone}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                TextFormField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 6,
+                  autofocus: true,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: const TextStyle(
+                    fontSize: 24,
+                    letterSpacing: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: '\u2022\u2022\u2022\u2022\u2022\u2022',
+                    counterText: '',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().length != 6) {
+                      return 'Please enter the 6-digit OTP code';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 56)),
+                  onPressed: _isVerifying ? null : _handleVerify,
+                  child: _isVerifying
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Verify & Continue'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _isResending ? null : _handleResend,
+                  child: Text(
+                    _isResending
+                        ? 'Resending code...'
+                        : 'Didn\'t receive a code? Resend OTP',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _verifyOtp,
-              child: _isLoading ? const CircularProgressIndicator() : const Text('Verify'),
-            ),
-          ],
+          ),
         ),
       ),
     );

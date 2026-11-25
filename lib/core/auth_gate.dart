@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/resident/auth/sign_up_screen.dart';
 import '../features/resident/auth/welcome_screen.dart';
 import '../features/resident/resident_shell.dart';
+import '../services/auth_role_cache.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -16,22 +19,66 @@ class _AuthGateState extends State<AuthGate> {
   String? _cachedUserId;
   Future<Map<String, dynamic>?>? _cachedProfile;
 
-  /// One query per signed-in user, reused across rebuilds.
   Future<Map<String, dynamic>?> _profileFor(String userId) {
     if (_cachedUserId != userId || _cachedProfile == null) {
       _cachedUserId = userId;
-      _cachedProfile = Supabase.instance.client
-          .from('profiles')
-          .select('role')
-          .eq('id', userId)
-          .maybeSingle();
+      _cachedProfile = _loadProfile(userId);
     }
     return _cachedProfile!;
   }
 
+  Future<Map<String, dynamic>?> _loadProfile(String userId) async {
+    try {
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final profile = await Supabase.instance.client
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (profile != null) {
+          final role = profile['role'] as String? ?? 'resident';
+          await AuthRoleCache.save(userId, role);
+          return profile;
+        }
+
+        // Allow time for a newly created profile to become available.
+        if (attempt < 2) {
+          await Future<void>.delayed(const Duration(milliseconds: 700));
+        }
+      }
+
+      // A successful query returning null means no profile exists.
+      // Do not use an old cached role in this case.
+      return null;
+    } catch (_) {
+      // Use the cached role only when the profile query fails.
+      final cachedRole = await AuthRoleCache.read(userId);
+      if (cachedRole != null) {
+        return <String, dynamic>{'role': cachedRole};
+      }
+      rethrow;
+    }
+  }
+
+  void _retryProfile() {
+    setState(() {
+      _cachedUserId = null;
+      _cachedProfile = null;
+    });
+  }
+
   Future<void> _signOut() async {
-    await Supabase.instance.client.auth.signOut();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+
+    if (userId != null) {
+      await AuthRoleCache.clear(userId);
+    }
+
+    await Supabase.instance.client.auth.signOut(scope: SignOutScope.local);
+
     if (!mounted) return;
+
     setState(() {
       _cachedUserId = null;
       _cachedProfile = null;
@@ -63,7 +110,10 @@ class _AuthGateState extends State<AuthGate> {
             }
 
             if (profileSnapshot.hasError) {
-              return _AuthErrorScreen(onSignOut: _signOut);
+              return _AuthErrorScreen(
+                onRetry: _retryProfile,
+                onSignOut: _signOut,
+              );
             }
 
             final profile = profileSnapshot.data;
@@ -71,6 +121,7 @@ class _AuthGateState extends State<AuthGate> {
             if (profile == null) {
               return NoProfileScreen(
                 phone: session.user.phone ?? '',
+                onRetry: _retryProfile,
                 onUseAnotherNumber: _signOut,
               );
             }
@@ -96,15 +147,14 @@ class _SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
 class _AuthErrorScreen extends StatelessWidget {
-  const _AuthErrorScreen({required this.onSignOut});
+  const _AuthErrorScreen({required this.onRetry, required this.onSignOut});
 
+  final VoidCallback onRetry;
   final Future<void> Function() onSignOut;
 
   @override
@@ -123,10 +173,8 @@ class _AuthErrorScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              OutlinedButton(
-                onPressed: onSignOut,
-                child: const Text('Sign out'),
-              ),
+              FilledButton(onPressed: onRetry, child: const Text('Try again')),
+              TextButton(onPressed: onSignOut, child: const Text('Sign out')),
             ],
           ),
         ),
@@ -139,10 +187,12 @@ class NoProfileScreen extends StatelessWidget {
   const NoProfileScreen({
     super.key,
     required this.phone,
+    required this.onRetry,
     required this.onUseAnotherNumber,
   });
 
   final String phone;
+  final VoidCallback onRetry;
   final Future<void> Function() onUseAnotherNumber;
 
   @override
@@ -165,21 +215,19 @@ class NoProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Create a household profile to start using ResQFlood.',
+              'Create an account to start using ResQFlood.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            FilledButton(
+            FilledButton(onPressed: onRetry, child: const Text('Try again')),
+            TextButton(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SignUpScreen(),
-                  ),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const SignUpScreen()));
               },
               child: const Text('Sign up'),
             ),
-            const SizedBox(height: 12),
             TextButton(
               onPressed: onUseAnotherNumber,
               child: const Text('Use a different number'),
@@ -201,7 +249,9 @@ class _RolePlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(role == 'shelter_manager' ? 'Shelter Manager' : 'Responder'),
+        title: Text(
+          role == 'shelter_manager' ? 'Shelter Manager' : 'Responder',
+        ),
         actions: [
           IconButton(
             tooltip: 'Sign out',

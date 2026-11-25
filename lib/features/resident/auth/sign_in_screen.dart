@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/app_routes.dart';
+import '../../../services/phone_auth_service.dart';
 import 'otp_verify_screen.dart';
-import 'sign_up_screen.dart'; // Added so the user can navigate to Sign Up
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -11,55 +13,70 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
+  final _authService = PhoneAuthService();
+
   bool _isLoading = false;
-  String? _notice; // Added to show the "No account found" message
+  bool _accountNotFound = false;
 
-  Future<void> _sendOtp() async {
-    final phone = _phoneController.text.trim();
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
 
-    // 1. Validate format (E.164-ish: '+' then 10-15 digits)
-    if (!RegExp(r'^\+\d{10,15}$').hasMatch(phone)) {
-      setState(() {
-        _notice = 'Enter your number in international format, e.g. +60123450001.';
-      });
-      return;
-    }
+  Future<void> _handleSignIn() async {
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
-      _notice = null; // Clear previous errors
+      _accountNotFound = false;
     });
 
+    final formattedPhone = _authService.formatMalaysianPhone(
+      _phoneController.text.trim(),
+    );
+
     try {
-      // 2. Send OTP but DO NOT create a new user
-      await Supabase.instance.client.auth.signInWithOtp(
-        phone: phone,
+      await _authService.sendOtp(
+        phone: formattedPhone,
         shouldCreateUser: false,
       );
 
       if (!mounted) return;
 
-      // Navigate to OTP Screen
-      Navigator.push(
+      Navigator.pushNamed(
         context,
-        MaterialPageRoute(
-          builder: (context) => OtpVerifyScreen(phoneNumber: phone),
-        ),
+        AppRoutes.otp,
+        arguments: OtpVerifyArgs(phone: formattedPhone, isSignUp: false),
       );
-    } on AuthException catch (error) {
+    } on AuthException catch (e) {
       if (!mounted) return;
 
-      final message = error.message.toLowerCase();
+      if (e.code == 'user_not_found') {
+        setState(() => _accountNotFound = true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
 
-      // 3. Catch the specific "user not found" error and show a friendly message
-      setState(() {
-        _notice = message.contains('signup') || message.contains('not allowed')
-            ? 'No account found for this number. Sign up first.'
-            : error.message;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send OTP: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -67,64 +84,78 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Sign In')),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                hintText: '+60123456789',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Show the notice (error or sign up link) if it exists
-            if (_notice != null) ...[
-              Text(
-                _notice!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              // If it's the "No account" error, show the Sign Up button
-              if (_notice!.contains('Sign up first'))
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SignUpScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Go to Sign up'),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Welcome Back',
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-              const SizedBox(height: 12),
-            ],
-
-            // 4. Fixed-size spinner and FilledButton (M3)
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton(
-                onPressed: _isLoading ? null : _sendOtp,
-                child: _isLoading
-                    ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
+                const SizedBox(height: 8),
+                Text(
+                  'Enter your registered +60 mobile number to receive a 6-digit login code.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                )
-                    : const Text('Send OTP'),
-              ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  onChanged: (_) {
+                    if (_accountNotFound) {
+                      setState(() => _accountNotFound = false);
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number *',
+                    prefixText: '+60 ',
+                    hintText: '12-345 6789',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: _authService.validateMalaysianPhone,
+                ),
+                if (_accountNotFound) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'No account was found for this phone number. Please sign up first.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.signUp);
+                    },
+                    child: const Text('Sign up'),
+                  ),
+                ],
+                const SizedBox(height: 28),
+                FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 56)),
+                  onPressed: _isLoading ? null : _handleSignIn,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Send Verification Code'),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
