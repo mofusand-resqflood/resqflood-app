@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'auth_profile_creation_gate.dart';
+
 class PhoneAuthService {
   SupabaseClient get _supabase => Supabase.instance.client;
 
@@ -60,35 +62,51 @@ class PhoneAuthService {
     String? homeAddress,
   }) async {
     final formattedPhone = formatMalaysianPhone(phone);
+    final isSignUp = fullName != null && homeAddress != null;
 
-    final response = await _supabase.auth.verifyOTP(
-      type: OtpType.sms,
-      phone: formattedPhone,
-      token: token.trim(),
-    );
+    // Prevent AuthGate from querying before signup profile creation finishes.
+    if (isSignUp) {
+      AuthProfileCreationGate.begin();
+    }
 
-    final user = response.user;
+    try {
+      final response = await _supabase.auth.verifyOTP(
+        type: OtpType.sms,
+        phone: formattedPhone,
+        token: token.trim(),
+      );
 
-    if (user != null && fullName != null && homeAddress != null) {
-      try {
-        await _supabase.from('profiles').insert({
-          'id': user.id,
-          'full_name': fullName.trim(),
-          'phone': formattedPhone,
-          'address': homeAddress.trim(),
-        });
-      } catch (error) {
-        // Prevent an authenticated session without a resident profile.
+      final user = response.user;
+
+      if (user != null && isSignUp) {
         try {
-          await _supabase.auth.signOut();
-        } catch (_) {
-          // Preserve the original profile insertion error.
-        }
+          await _supabase.from('profiles').insert({
+            'id': user.id,
+            'full_name': fullName.trim(),
+            'phone': formattedPhone,
+            'address': homeAddress.trim(),
+          });
 
-        throw ProfileSaveException();
+          // Tell AuthGate to reload the profile, even for the same user.
+          AuthProfileCreationGate.notifyProfileCreated();
+        } catch (error) {
+          // Prevent an authenticated session without a resident profile.
+          try {
+            await _supabase.auth.signOut();
+          } catch (_) {
+            // Preserve the original profile insertion error.
+          }
+
+          throw ProfileSaveException();
+        }
+      }
+
+      return response;
+    } finally {
+      if (isSignUp) {
+        AuthProfileCreationGate.complete();
       }
     }
-    return response;
   }
 
   Future<void> signOut() async {

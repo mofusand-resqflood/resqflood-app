@@ -18,6 +18,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final _authService = PhoneAuthService();
 
   bool _isLoading = false;
+  bool _accountNotFound = false;
 
   @override
   void dispose() {
@@ -28,7 +29,10 @@ class _SignInScreenState extends State<SignInScreen> {
   Future<void> _handleSignIn() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _accountNotFound = false;
+    });
 
     final formattedPhone = _authService.formatMalaysianPhone(
       _phoneController.text.trim(),
@@ -41,6 +45,7 @@ class _SignInScreenState extends State<SignInScreen> {
       );
 
       if (!mounted) return;
+
       Navigator.pushNamed(
         context,
         AppRoutes.otp,
@@ -48,14 +53,25 @@ class _SignInScreenState extends State<SignInScreen> {
       );
     } on AuthException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+
+      final isUnknownAccount =
+          e.code == 'user_not_found' ||
+          (e.code == 'otp_disabled' &&
+              e.message.toLowerCase().contains('signups not allowed for otp'));
+
+      if (isUnknownAccount) {
+        setState(() => _accountNotFound = true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send OTP: $e'),
@@ -63,7 +79,9 @@ class _SignInScreenState extends State<SignInScreen> {
         ),
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -95,6 +113,11 @@ class _SignInScreenState extends State<SignInScreen> {
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
+                  onChanged: (_) {
+                    if (_accountNotFound) {
+                      setState(() => _accountNotFound = false);
+                    }
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Phone Number *',
                     prefixText: '+60 ',
@@ -104,6 +127,22 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   validator: _authService.validateMalaysianPhone,
                 ),
+                if (_accountNotFound) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'No account was found for this phone number. Please sign up first.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.signUp);
+                    },
+                    child: const Text('Sign up'),
+                  ),
+                ],
                 const SizedBox(height: 28),
                 FilledButton(
                   style: FilledButton.styleFrom(minimumSize: const Size(0, 56)),
