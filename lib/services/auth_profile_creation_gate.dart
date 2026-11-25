@@ -3,6 +3,15 @@ import 'dart:async';
 class AuthProfileCreationGate {
   static Completer<void>? _pending;
 
+  static final StreamController<void> _profileCreatedController =
+      StreamController<void>.broadcast();
+
+  static Stream<void> get profileCreated => _profileCreatedController.stream;
+
+  static void notifyProfileCreated() {
+    _profileCreatedController.add(null);
+  }
+
   static void begin() {
     _pending ??= Completer<void>();
   }

@@ -21,6 +21,7 @@ class _AuthGateState extends State<AuthGate> {
   Future<Map<String, dynamic>?>? _cachedProfile;
 
   late final StreamSubscription<AuthState> _authSubscription;
+  late final StreamSubscription<void> _profileCreatedSubscription;
   String? _observedUserId;
   int _profileGeneration = 0;
 
@@ -32,6 +33,16 @@ class _AuthGateState extends State<AuthGate> {
     _observedUserId = auth.currentUser?.id;
 
     _authSubscription = auth.onAuthStateChange.listen(_handleAuthStateChange);
+
+    _profileCreatedSubscription = AuthProfileCreationGate.profileCreated.listen(
+      (_) {
+        if (!mounted || Supabase.instance.client.auth.currentUser == null) {
+          return;
+        }
+
+        setState(_invalidateProfileCache);
+      },
+    );
   }
 
   void _handleAuthStateChange(AuthState state) {
@@ -153,6 +164,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void dispose() {
     _authSubscription.cancel();
+    _profileCreatedSubscription.cancel();
     super.dispose();
   }
 

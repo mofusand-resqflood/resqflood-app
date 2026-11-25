@@ -86,6 +86,9 @@ class PhoneAuthService {
             'phone': formattedPhone,
             'address': homeAddress.trim(),
           });
+
+          // Tell AuthGate to reload the profile, even for the same user.
+          AuthProfileCreationGate.notifyProfileCreated();
         } catch (error) {
           // Prevent an authenticated session without a resident profile.
           try {
