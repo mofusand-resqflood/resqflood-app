@@ -7,6 +7,7 @@ import '../features/resident/auth/sign_up_screen.dart';
 import '../features/resident/auth/welcome_screen.dart';
 import '../features/resident/resident_shell.dart';
 import '../services/auth_role_cache.dart';
+import '../services/auth_profile_creation_gate.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -19,15 +20,71 @@ class _AuthGateState extends State<AuthGate> {
   String? _cachedUserId;
   Future<Map<String, dynamic>?>? _cachedProfile;
 
+  late final StreamSubscription<AuthState> _authSubscription;
+  String? _observedUserId;
+  int _profileGeneration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final auth = Supabase.instance.client.auth;
+    _observedUserId = auth.currentUser?.id;
+
+    _authSubscription = auth.onAuthStateChange.listen(_handleAuthStateChange);
+  }
+
+  void _handleAuthStateChange(AuthState state) {
+    final nextUserId = state.session?.user.id;
+    final previousUserId = _observedUserId;
+
+    if (previousUserId == nextUserId) return;
+
+    _observedUserId = nextUserId;
+    _invalidateProfileCache();
+
+    // Clear the previous user's persistent role after sign-out
+    // or when switching to another account.
+    if (previousUserId != null) {
+      unawaited(AuthRoleCache.clear(previousUserId));
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _invalidateProfileCache() {
+    _profileGeneration++;
+    _cachedUserId = null;
+    _cachedProfile = null;
+  }
+
+  bool _isCurrentRequest(String userId, int generation) {
+    return generation == _profileGeneration &&
+        Supabase.instance.client.auth.currentUser?.id == userId;
+  }
+
   Future<Map<String, dynamic>?> _profileFor(String userId) {
     if (_cachedUserId != userId || _cachedProfile == null) {
       _cachedUserId = userId;
-      _cachedProfile = _loadProfile(userId);
+      final generation = _profileGeneration;
+      _cachedProfile = _loadProfile(userId, generation);
     }
+
     return _cachedProfile!;
   }
 
-  Future<Map<String, dynamic>?> _loadProfile(String userId) async {
+  Future<Map<String, dynamic>?> _loadProfile(
+    String userId,
+    int generation,
+  ) async {
+    // Wait until signup finishes creating the resident profile.
+    await AuthProfileCreationGate.waitForCompletion();
+
+    if (!_isCurrentRequest(userId, generation)) {
+      return null;
+    }
     try {
       for (var attempt = 0; attempt < 3; attempt++) {
         final profile = await Supabase.instance.client
@@ -36,9 +93,19 @@ class _AuthGateState extends State<AuthGate> {
             .eq('id', userId)
             .maybeSingle();
 
+        if (!_isCurrentRequest(userId, generation)) {
+          return null;
+        }
+
         if (profile != null) {
           final role = profile['role'] as String? ?? 'resident';
+
           await AuthRoleCache.save(userId, role);
+
+          if (!_isCurrentRequest(userId, generation)) {
+            await AuthRoleCache.clear(userId);
+            return null;
+          }
           return profile;
         }
 
@@ -48,24 +115,29 @@ class _AuthGateState extends State<AuthGate> {
         }
       }
 
-      // A successful query returning null means no profile exists.
-      // Do not use an old cached role in this case.
       return null;
     } catch (_) {
+      if (!_isCurrentRequest(userId, generation)) {
+        return null;
+      }
+
       // Use the cached role only when the profile query fails.
       final cachedRole = await AuthRoleCache.read(userId);
+
+      if (!_isCurrentRequest(userId, generation)) {
+        return null;
+      }
+
       if (cachedRole != null) {
         return <String, dynamic>{'role': cachedRole};
       }
+
       rethrow;
     }
   }
 
   void _retryProfile() {
-    setState(() {
-      _cachedUserId = null;
-      _cachedProfile = null;
-    });
+    setState(_invalidateProfileCache);
   }
 
   Future<void> _signOut() async {
@@ -76,13 +148,12 @@ class _AuthGateState extends State<AuthGate> {
     }
 
     await Supabase.instance.client.auth.signOut(scope: SignOutScope.local);
+  }
 
-    if (!mounted) return;
-
-    setState(() {
-      _cachedUserId = null;
-      _cachedProfile = null;
-    });
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -103,6 +174,7 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         return FutureBuilder<Map<String, dynamic>?>(
+          key: ValueKey('${session.user.id}-$_profileGeneration'),
           future: _profileFor(session.user.id),
           builder: (context, profileSnapshot) {
             if (profileSnapshot.connectionState == ConnectionState.waiting) {
