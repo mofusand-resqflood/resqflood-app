@@ -6,6 +6,7 @@ import '../../../services/offline_queue_service.dart';
 import 'widgets/network_status_banner.dart';
 import 'widgets/quick_actions_grid.dart';
 import 'widgets/sos_button.dart';
+import 'widgets/active_request_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -82,6 +83,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
 
               const SizedBox(height: 24),
+
+              const ActiveRequestCard(),
+              const SizedBox(height: 16),
 
               const SosButton(),
 
