@@ -74,7 +74,6 @@ class OpenSheltersList extends StatelessWidget {
 
                     const SizedBox(height: 8),
 
-                    // 👇 THIS SHOWS THE DISTANCE 👇
                     if (shelter.distance != null)
                       Row(
                         children: [
