@@ -1,3 +1,4 @@
+import 'widgets/voice_text_input.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/app_routes.dart';
@@ -202,19 +203,11 @@ class _SosFormScreenState extends State<SosFormScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                const Text(
-                  'Describe your situation',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
+                VoiceTextInput(
                   controller: _descriptionController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText:
-                    'e.g. Air naik paras pinggang, ada 4 orang termasuk warga emas perlukan bantuan pindah',
-                    border: OutlineInputBorder(),
-                  ),
+                  labelText: 'Describe your situation',
+                  hintText:
+                  'e.g. Air naik paras pinggang, ada 4 orang termasuk warga emas perlukan bantuan pindah',
                 ),
                 const SizedBox(height: 12),
 
