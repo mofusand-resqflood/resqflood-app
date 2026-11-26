@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../services/connectivity_service.dart';
 import '../../../services/local_database.dart';
 import '../../../services/offline_queue_service.dart';
+import 'widgets/announcements_card.dart';
 import 'widgets/network_status_banner.dart';
 import 'widgets/quick_actions_grid.dart';
 import 'widgets/sos_button.dart';
@@ -87,6 +88,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 24),
 
+              // 👇 YOUR ANNOUNCEMENTS CARD IS ADDED HERE 👇
+              AnnouncementsCard(),
+              // 👆 ---------------------------------------- 👆
+
+              const SizedBox(height: 24),
+
               const Text(
                 'Quick actions',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -113,8 +120,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: Text(
                         'If the situation is not critical, '
-                        'please proceed to your nearest PPS '
-                        '(temporary relief centre).',
+                            'please proceed to your nearest PPS '
+                            '(temporary relief centre).',
                         style: TextStyle(fontSize: 14),
                       ),
                     ),

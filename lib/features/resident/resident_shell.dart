@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'profile/profile_screen.dart';
 
 import '../../services/offline_queue_service.dart';
+import 'dashboard/dashboard_screen.dart'; // 👈 ADDED THIS IMPORT
 
 class ResidentShell extends StatefulWidget {
   const ResidentShell({super.key});
@@ -43,7 +44,7 @@ class _ResidentShellState extends State<ResidentShell> {
   }
 
   List<Widget> get _pages => [
-    const _TabPlaceholder(title: 'Home', icon: Icons.home_outlined),
+    const DashboardScreen(), // 👈 REPLACED PLACEHOLDER HERE
     const _TabPlaceholder(title: 'Nearby', icon: Icons.location_on_outlined),
     const _TabPlaceholder(title: 'Ask', icon: Icons.chat_bubble_outline),
     _SyncTab(queueCount: _queueCount),
