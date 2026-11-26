@@ -36,3 +36,7 @@ supabase/.env
 supabase/.branches/
 supabase/.temp/
 supabase/snippets/
+
+# IDE
+.idea/
+*.iml

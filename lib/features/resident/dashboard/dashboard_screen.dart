@@ -1,9 +1,8 @@
-
 import 'package:flutter/material.dart';
 
-import '../../../../services/connectivity_service.dart';
-import '../../../../services/local_database.dart';
-import '../../../../services/offline_queue_service.dart';
+import '../../../services/connectivity_service.dart';
+import '../../../services/local_database.dart';
+import '../../../services/offline_queue_service.dart';
 import 'widgets/network_status_banner.dart';
 import 'widgets/quick_actions_grid.dart';
 import 'widgets/sos_button.dart';
@@ -47,10 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Home'), centerTitle: false),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -59,10 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               const Text(
                 "We're here for you",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               const Text(
@@ -81,8 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     builder: (context, queueSnapshot) {
                       return NetworkStatusBanner(
                         isOnline: connectionSnapshot.data ?? false,
-                        queuedCount:
-                        queueSnapshot.data ?? _initialQueueCount,
+                        queuedCount: queueSnapshot.data ?? _initialQueueCount,
                       );
                     },
                   );
@@ -97,10 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const Text(
                 'Quick actions',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
 
@@ -124,8 +113,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: Text(
                         'If the situation is not critical, '
-                            'please proceed to your nearest PPS '
-                            '(temporary relief centre).',
+                        'please proceed to your nearest PPS '
+                        '(temporary relief centre).',
                         style: TextStyle(fontSize: 14),
                       ),
                     ),

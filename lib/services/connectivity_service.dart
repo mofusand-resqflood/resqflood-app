@@ -9,8 +9,7 @@ class ConnectivityService {
   Future<bool> checkConnection() async {
     final results = await _connectivity.checkConnectivity();
 
-    if (results.isEmpty ||
-        results.contains(ConnectivityResult.none)) {
+    if (results.isEmpty || results.contains(ConnectivityResult.none)) {
       return false;
     }
 

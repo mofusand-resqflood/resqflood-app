@@ -1,4 +1,3 @@
-
 class SosRequest {
   final String emergencyType;
   final String description;

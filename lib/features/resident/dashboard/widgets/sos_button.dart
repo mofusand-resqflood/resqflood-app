@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/app_routes.dart';
@@ -18,10 +17,7 @@ class SosButton extends StatelessWidget {
         icon: const Icon(Icons.sos, size: 30),
         label: const Text(
           'SOS - REQUEST HELP',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red.shade700,

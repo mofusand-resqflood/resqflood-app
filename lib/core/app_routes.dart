@@ -1,13 +1,13 @@
-import '../features/resident/sos/sos_form_screen.dart';
-import '../features/resident/sos/sos_confirmation_screen.dart';
-
 import 'package:flutter/material.dart';
 
-import '../features/resident/dashboard/dashboard_screen.dart';
-
+import '../features/resident/auth/otp_verify_screen.dart';
 import '../features/resident/auth/sign_in_screen.dart';
+import '../features/resident/auth/household_profile_screen.dart';
 import '../features/resident/auth/sign_up_screen.dart';
 import '../features/resident/auth/welcome_screen.dart';
+import '../features/resident/sos/sos_form_screen.dart';
+import '../features/resident/sos/sos_confirmation_screen.dart';
+import '../features/resident/dashboard/dashboard_screen.dart';
 import '../features/resident/resident_shell.dart';
 
 class AppRoutes {
@@ -18,6 +18,7 @@ class AppRoutes {
   static const String signUp = '/sign-up';
   static const String signIn = '/sign-in';
   static const String otp = '/otp';
+  static const String householdProfile = '/household-profile';
 
   // Main resident navigation
   static const String shell = '/shell';
@@ -67,7 +68,8 @@ class AppRoutes {
     resident: (_) => const ResidentShell(),
 
     // Resident screens to be implemented by their assigned Jira stories
-    otp: _placeholder('Verify phone number'),
+    otp: (_) => const OtpVerifyScreen(),
+    householdProfile: (_) => const HouseholdProfileScreen(),
     dashboard: (_) => const DashboardScreen(),
     sosForm: (_) => const SosFormScreen(),
     sosConfirmation: (_) => const SosConfirmationScreen(),
