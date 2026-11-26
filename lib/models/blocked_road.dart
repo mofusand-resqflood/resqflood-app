@@ -5,6 +5,7 @@ class BlockedRoad {
   final double latitude;
   final double longitude;
   final String status;
+  final DateTime? verifiedAt;
 
   BlockedRoad({
     required this.id,
@@ -13,6 +14,7 @@ class BlockedRoad {
     required this.latitude,
     required this.longitude,
     required this.status,
+    this.verifiedAt,
   });
 
   factory BlockedRoad.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,9 @@ class BlockedRoad {
       latitude: (json['latitude'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? 0.0).toDouble(),
       status: json['status'] ?? 'pending',
+      verifiedAt: json['verified_at'] != null
+          ? DateTime.parse(json['verified_at'])
+          : null,
     );
   }
 
@@ -34,6 +39,7 @@ class BlockedRoad {
       'latitude': latitude,
       'longitude': longitude,
       'status': status,
+      'verified_at': verifiedAt?.toIso8601String(),
     };
   }
 }

@@ -17,7 +17,6 @@ class NearbyService {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) return null;
       }
-
       return await Geolocator.getCurrentPosition();
     } catch (e) {
       return null;
@@ -35,19 +34,16 @@ class NearbyService {
         .from('shelters')
         .stream(primaryKey: ['id'])
         .eq('status', 'open')
-        .map<List<Shelter>>((data) { // 👈 EXPLICIT TYPE HERE
-      final List<Shelter> shelters = data.map<Shelter>((json) { // 👈 EXPLICIT TYPE HERE
+        .map<List<Shelter>>((data) {
+      final List<Shelter> shelters = data.map<Shelter>((json) {
         final double lat = (json['latitude'] ?? 0.0).toDouble();
         final double lng = (json['longitude'] ?? 0.0).toDouble();
-
         final dist = Geolocator.distanceBetween(userLat, userLng, lat, lng);
 
         return Shelter.fromJson(json, distance: dist);
       }).toList();
 
-      // Sort by distance
       shelters.sort((a, b) => (a.distance ?? 0).compareTo(b.distance ?? 0));
-
       _cacheShelters(shelters);
       return shelters;
     });
@@ -64,9 +60,22 @@ class NearbyService {
   Future<List<Shelter>> getCachedShelters() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_cacheKey);
+
     if (jsonString != null) {
       final List<dynamic> decoded = jsonDecode(jsonString);
-      return decoded.map((e) => Shelter.fromJson(e)).toList();
+      final userLocation = await _getCurrentLocation();
+      final double userLat = userLocation?.latitude ?? 3.0738;
+      final double userLng = userLocation?.longitude ?? 101.5183;
+
+      final List<Shelter> shelters = decoded.map((e) {
+        final base = Shelter.fromJson(e);
+        // Recalculate distance for cached items
+        final dist = Geolocator.distanceBetween(userLat, userLng, base.latitude, base.longitude);
+        return Shelter.fromJson(e, distance: dist);
+      }).toList();
+
+      shelters.sort((a, b) => (a.distance ?? 0).compareTo(b.distance ?? 0));
+      return shelters;
     }
     return [];
   }

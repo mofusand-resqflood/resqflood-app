@@ -7,6 +7,7 @@ class BlockedRoadService {
         .from('blocked_roads')
         .stream(primaryKey: ['id'])
         .eq('status', 'verified')
+        .order('verified_at', ascending: false)
         .map((data) => data.map((json) => BlockedRoad.fromJson(json)).toList());
   }
 }

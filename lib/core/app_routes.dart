@@ -9,6 +9,7 @@ import '../features/resident/sos/sos_form_screen.dart';
 import '../features/resident/sos/sos_confirmation_screen.dart';
 import '../features/resident/dashboard/dashboard_screen.dart';
 import '../features/resident/resident_shell.dart';
+import '../features/resident/nearby/report_blocked_road_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -76,7 +77,7 @@ class AppRoutes {
     activeRequest: _placeholder('Active rescue request'),
     shelterQrPass: _placeholder('Shelter QR pass'),
     nearby: _placeholder('Help around you'),
-    reportBlockedRoad: _placeholder('Report a blocked road'),
+    reportBlockedRoad: (_) => const ReportBlockedRoadScreen(),
     chatbotTab: _placeholder('Ask ResQFlood'),
     chatbot: _placeholder('Ask the AI assistant'),
     savedTopics: _placeholder('Saved emergency topics'),
