@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:resqflood_app/features/resident/dashboard/widgets/active_request_card.dart';
 import 'package:resqflood_app/models/sos_request.dart';
 import 'package:resqflood_app/services/tracking_request_cache.dart';
+import 'package:resqflood_app/services/tracking_service.dart';
 
 void main() {
   final createdAt = DateTime.utc(2026, 11, 26, 10);
@@ -199,4 +202,53 @@ void main() {
       expect(find.text('View request'), findsNothing);
     });
   });
+  group('TrackingService resilience', () {
+    test('cache failures do not prevent live request delivery', () async {
+      final controller = StreamController<List<Map<String, dynamic>>>();
+      final service = TrackingService.forTesting(
+        cache: _FailingTrackingCache(),
+        requestStreamFactory: (_) => controller.stream,
+        currentUserId: () => 'resident-123',
+      );
+
+      final resultFuture = service.watchActiveRequest().first;
+
+      controller.add([
+        {
+          'id': 'server-request-1',
+          'resident_id': 'resident-123',
+          'help_type': 'Flood',
+          'status': 'on_the_way',
+          'last_known_eta_minutes': 7,
+          'created_at': DateTime.now().toIso8601String(),
+        },
+      ]);
+
+      final result = await resultFuture;
+      await controller.close();
+
+      expect(result, isNotNull);
+      expect(result!.id, 'server-request-1');
+      expect(result.isActive, isTrue);
+      expect(result.isCached, isFalse);
+      expect(result.lastConfirmedAt, isNotNull);
+    });
+  });
+}
+
+class _FailingTrackingCache implements TrackingRequestCacheStore {
+  @override
+  Future<SosRequest?> read(String userId) {
+    return Future<SosRequest?>.error(StateError('Cache read failed'));
+  }
+
+  @override
+  Future<void> write(String userId, SosRequest request) {
+    return Future<void>.error(StateError('Cache write failed'));
+  }
+
+  @override
+  Future<void> clear(String userId) {
+    return Future<void>.error(StateError('Cache clear failed'));
+  }
 }

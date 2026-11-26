@@ -6,14 +6,12 @@ class SosRequest {
   final bool medicalEmergency;
   final DateTime createdAt;
 
-  // Server-side tracking fields.
   final String? id;
   final String? residentId;
   final String status;
   final int? lastKnownEtaMinutes;
   final DateTime? updatedAt;
 
-  // Local cache metadata.
   final bool isCached;
   final DateTime? lastConfirmedAt;
 
@@ -83,6 +81,44 @@ class SosRequest {
     return 'About $eta minutes';
   }
 
+  /// Marks a server response as freshly confirmed.
+  SosRequest withServerConfirmation({DateTime? confirmedAt}) {
+    return SosRequest(
+      emergencyType: emergencyType,
+      description: description,
+      location: location,
+      peopleAffected: peopleAffected,
+      medicalEmergency: medicalEmergency,
+      createdAt: createdAt,
+      id: id,
+      residentId: residentId,
+      status: status,
+      lastKnownEtaMinutes: lastKnownEtaMinutes,
+      updatedAt: updatedAt,
+      isCached: false,
+      lastConfirmedAt: confirmedAt ?? DateTime.now(),
+    );
+  }
+
+  /// Returns the last-known request with an explicit stale-data marker.
+  SosRequest asCached() {
+    return SosRequest(
+      emergencyType: emergencyType,
+      description: description,
+      location: location,
+      peopleAffected: peopleAffected,
+      medicalEmergency: medicalEmergency,
+      createdAt: createdAt,
+      id: id,
+      residentId: residentId,
+      status: status,
+      lastKnownEtaMinutes: lastKnownEtaMinutes,
+      updatedAt: updatedAt,
+      isCached: true,
+      lastConfirmedAt: lastConfirmedAt,
+    );
+  }
+
   factory SosRequest.fromJson(
     Map<String, dynamic> json, {
     bool fromCache = false,
@@ -135,7 +171,8 @@ class SosRequest {
       'last_known_eta_minutes': lastKnownEtaMinutes,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
-      'cached_at': (cachedAt ?? DateTime.now()).toIso8601String(),
+      'cached_at': (lastConfirmedAt ?? cachedAt ?? DateTime.now())
+          .toIso8601String(),
     };
   }
 }

@@ -70,7 +70,6 @@ class SosService {
         .from('requests')
         .insert({
           'resident_id': user.id,
-          'status': 'pending',
           'help_type': request.emergencyType,
           'people_count': request.peopleAffected,
           'description': fullDescription,
