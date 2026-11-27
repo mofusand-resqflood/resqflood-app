@@ -7,6 +7,7 @@ import '../features/resident/auth/sign_up_screen.dart';
 import '../features/resident/auth/welcome_screen.dart';
 import '../features/resident/sos/sos_form_screen.dart';
 import '../features/resident/sos/sos_confirmation_screen.dart';
+import '../features/resident/tracking/active_request_screen.dart';
 import '../features/resident/dashboard/dashboard_screen.dart';
 import '../features/resident/resident_shell.dart';
 
@@ -73,7 +74,7 @@ class AppRoutes {
     dashboard: (_) => const DashboardScreen(),
     sosForm: (_) => const SosFormScreen(),
     sosConfirmation: (_) => const SosConfirmationScreen(),
-    activeRequest: _placeholder('Active rescue request'),
+    activeRequest: (_) => const ActiveRequestScreen(),
     shelterQrPass: _placeholder('Shelter QR pass'),
     nearby: _placeholder('Help around you'),
     reportBlockedRoad: _placeholder('Report a blocked road'),

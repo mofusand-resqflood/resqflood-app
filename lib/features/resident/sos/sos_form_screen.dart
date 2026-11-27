@@ -154,7 +154,9 @@ class _SosFormScreenState extends State<SosFormScreen> {
         AppRoutes.sosConfirmation,
         arguments: requestId,
       );
-    } catch (error) {
+    } catch (error, stackTrace) {
+      debugPrint('SOS SUBMISSION ERROR: $error');
+      debugPrint('SOS SUBMISSION STACK TRACE: $stackTrace');
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -198,7 +200,7 @@ class _SosFormScreenState extends State<SosFormScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'Describe your situation in Bahasa Melayu or English. '
-                      'AI can auto-fill the help type and number of people for you.',
+                  'AI can auto-fill the help type and number of people for you.',
                 ),
                 const SizedBox(height: 20),
 
@@ -211,8 +213,7 @@ class _SosFormScreenState extends State<SosFormScreen> {
                   controller: _descriptionController,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    hintText:
-                    'e.g. Air naik paras pinggang, ada 4 orang termasuk warga emas perlukan bantuan pindah',
+                    hintText: 'e.g. Air naik paras pinggang, ada 4 orang termasuk warga emas perlukan bantuan pindah',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -224,10 +225,10 @@ class _SosFormScreenState extends State<SosFormScreen> {
                     onPressed: _isAnalyzing ? null : _analyzeWithAi,
                     icon: _isAnalyzing
                         ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.auto_awesome),
                     label: Text(
                       _isAnalyzing
@@ -314,11 +315,9 @@ class _SosFormScreenState extends State<SosFormScreen> {
                     ),
                     items: _helpTypes
                         .map(
-                          (type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type),
-                      ),
-                    )
+                          (type) =>
+                              DropdownMenuItem(value: type, child: Text(type)),
+                        )
                         .toList(),
                     onChanged: (value) {
                       if (value != null) {
