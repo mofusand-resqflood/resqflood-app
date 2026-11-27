@@ -62,7 +62,6 @@ GRANT SELECT ON public.requests TO authenticated;
 
 GRANT INSERT (
   resident_id,
-  status,
   description,
   voice_transcript,
   help_type,

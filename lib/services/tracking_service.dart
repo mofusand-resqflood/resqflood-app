@@ -8,32 +8,33 @@ import 'tracking_request_cache.dart';
 typedef ActiveRequestStreamFactory =
     Stream<List<Map<String, dynamic>>> Function(String userId);
 
+typedef AuthUserIdStreamFactory = Stream<String?> Function();
+
 class TrackingService {
   TrackingService._()
     : _cache = TrackingRequestCache(),
       _requestStreamFactory = _createLiveRequestStream,
-      _currentUserId = _getCurrentUserId,
+      _userIdStreamFactory = _authUserIdChanges,
       _reconnectDelay = const Duration(seconds: 3);
 
   TrackingService.forTesting({
-    required TrackingRequestCacheStore cache,
-    required ActiveRequestStreamFactory requestStreamFactory,
-    required String? Function() currentUserId,
-    Duration reconnectDelay = const Duration(milliseconds: 10),
-  }) : _cache = cache,
-       _requestStreamFactory = requestStreamFactory,
-       _currentUserId = currentUserId,
-       _reconnectDelay = reconnectDelay;
+    required this._cache,
+    required this._requestStreamFactory,
+    required this._userIdStreamFactory,
+    this._reconnectDelay = const Duration(milliseconds: 10),
+  });
 
   static final TrackingService instance = TrackingService._();
 
   final TrackingRequestCacheStore _cache;
   final ActiveRequestStreamFactory _requestStreamFactory;
-  final String? Function() _currentUserId;
+  final AuthUserIdStreamFactory _userIdStreamFactory;
   final Duration _reconnectDelay;
 
-  static String? _getCurrentUserId() {
-    return Supabase.instance.client.auth.currentUser?.id;
+  static Stream<String?> _authUserIdChanges() {
+    return Supabase.instance.client.auth.onAuthStateChange
+        .map((state) => state.session?.user.id)
+        .distinct();
   }
 
   static Stream<List<Map<String, dynamic>>> _createLiveRequestStream(
@@ -61,54 +62,134 @@ class TrackingService {
     }
   }
 
-  Stream<SosRequest?> watchActiveRequest() async* {
-    final userId = _currentUserId();
+  Stream<SosRequest?> watchActiveRequest() {
+    return Stream<SosRequest?>.multi((controller) {
+      StreamSubscription<String?>? authSubscription;
+      StreamSubscription<SosRequest?>? requestSubscription;
+      var generation = 0;
 
-    if (userId == null) {
-      yield null;
-      return;
-    }
+      Future<void> switchUser(String? userId) async {
+        final currentGeneration = ++generation;
 
+        // Clear the previous resident's information immediately.
+        controller.add(null);
+
+        final previousSubscription = requestSubscription;
+        requestSubscription = null;
+
+        // Do not block the new account while the old stream shuts down.
+        // Generation checks prevent any late events from reaching the listener.
+        unawaited(previousSubscription?.cancel());
+
+        if (generation != currentGeneration || userId == null) {
+          return;
+        }
+
+        // Restore only a cache entry that belongs to this resident.
+        try {
+          final cached = await _cache.read(userId);
+
+          if (generation != currentGeneration) return;
+
+          if (cached != null &&
+              cached.isActive &&
+              cached.residentId == userId) {
+            controller.add(cached.asCached());
+          }
+        } catch (_) {
+          // Cache failures must not prevent live tracking.
+        }
+
+        if (generation != currentGeneration) return;
+
+        final nextSubscription = _watchUser(userId).listen(
+          (request) {
+            if (generation == currentGeneration) {
+              controller.add(request);
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (generation == currentGeneration) {
+              controller.addError(error, stackTrace);
+            }
+          },
+        );
+
+        if (generation == currentGeneration) {
+          requestSubscription = nextSubscription;
+        } else {
+          await nextSubscription.cancel();
+        }
+      }
+
+      authSubscription = _userIdStreamFactory().listen(
+        (userId) {
+          unawaited(switchUser(userId));
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          controller.addError(error, stackTrace);
+        },
+      );
+
+      controller.onCancel = () async {
+        generation++;
+
+        await authSubscription?.cancel();
+
+        final activeRequestSubscription = requestSubscription;
+        requestSubscription = null;
+
+        if (activeRequestSubscription != null) {
+          unawaited(activeRequestSubscription.cancel());
+        }
+      };
+    });
+  }
+
+  Stream<SosRequest?> _watchUser(String userId) async* {
     SosRequest? lastKnown;
 
-    try {
-      final cached = await _cache.read(userId);
-      if (cached != null && cached.isActive) {
-        lastKnown = cached.asCached();
-        yield lastKnown;
-      }
-    } catch (_) {
-      // Cache read failure must not prevent the live stream from starting.
-    }
-
     while (true) {
+      var emittedCachedFallback = false;
+
       try {
         await for (final rows in _requestStreamFactory(userId)) {
           final activeRequests =
               rows
                   .map((row) => SosRequest.fromJson(row))
-                  .where((request) => request.isActive)
+                  .where(
+                    (request) =>
+                        request.isActive && request.residentId == userId,
+                  )
                   .toList()
                 ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           if (activeRequests.isEmpty) {
             lastKnown = null;
-            await _safeClear(userId);
             yield null;
+            await _safeClear(userId);
             continue;
           }
 
           final latest = activeRequests.first.withServerConfirmation();
           lastKnown = latest;
 
-          await _safeWrite(userId, latest);
+          // Deliver server-confirmed data before attempting local persistence.
           yield latest;
+          await _safeWrite(userId, latest);
         }
-      } catch (_) {
-        // Reconnect below while retaining the last confirmed request.
+      } catch (error, stackTrace) {
+        // Preserve the last confirmed request when live updates fail.
+        if (lastKnown != null && lastKnown.isActive) {
+          yield lastKnown.asCached();
+          emittedCachedFallback = true;
+        } else {
+          // Let the UI show a retry message while reconnection continues.
+          yield* Stream<SosRequest?>.error(error, stackTrace);
+        }
       }
 
-      if (lastKnown != null && lastKnown.isActive) {
+      if (!emittedCachedFallback && lastKnown != null && lastKnown.isActive) {
         yield lastKnown.asCached();
       }
 

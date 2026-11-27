@@ -25,10 +25,17 @@ class TrackingRequestCache implements TrackingRequestCacheStore {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       final cached = SosRequest.fromJson(decoded, fromCache: true);
 
-      if (cached.isActive) return cached;
+      // Never restore data whose resident ownership cannot be verified.
+      if (cached.residentId != userId || !cached.isActive) {
+        try {
+          await prefs.remove(key);
+        } catch (_) {
+          // Cache cleanup is best-effort.
+        }
+        return null;
+      }
 
-      await prefs.remove(key);
-      return null;
+      return cached;
     } catch (_) {
       try {
         await prefs.remove(key);
@@ -41,6 +48,10 @@ class TrackingRequestCache implements TrackingRequestCacheStore {
 
   @override
   Future<void> write(String userId, SosRequest request) async {
+    if (request.residentId != userId) {
+      throw ArgumentError('Tracking cache resident ID does not match its key.');
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final json = jsonEncode(request.toTrackingCache());
     await prefs.setString(_cacheKey(userId), json);

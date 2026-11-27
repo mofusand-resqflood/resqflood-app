@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../models/blocked_road.dart';
 import '../../../../services/blocked_road_service.dart';
 
@@ -7,10 +8,10 @@ class BlockedRoadsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _service = BlockedRoadService(); // 👈 INSIDE BUILD METHOD
+    final service = BlockedRoadService(); // 👈 INSIDE BUILD METHOD
 
     return StreamBuilder<List<BlockedRoad>>(
-      stream: _service.getVerifiedRoads(),
+      stream: service.getVerifiedRoads(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -22,7 +23,10 @@ class BlockedRoadsList extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Blocked Roads', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Blocked Roads',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             ListView.builder(
               shrinkWrap: true,
@@ -35,7 +39,10 @@ class BlockedRoadsList extends StatelessWidget {
                   color: Colors.red.shade50,
                   child: ListTile(
                     leading: const Icon(Icons.warning, color: Colors.red),
-                    title: Text(road.roadName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(
+                      road.roadName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     subtitle: Text(road.note),
                   ),
                 );

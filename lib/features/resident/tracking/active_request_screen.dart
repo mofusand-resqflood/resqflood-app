@@ -33,8 +33,8 @@ class _ActiveRequestScreenState extends State<ActiveRequestScreen> {
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
-                  'Unable to load your request right now. '
-                  'Please check your connection and try again.',
+                  'Unable to check your request. '
+                  'Retrying automatically...',
                   textAlign: TextAlign.center,
                 ),
               ),
