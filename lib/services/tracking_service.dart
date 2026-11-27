@@ -86,6 +86,8 @@ class TrackingService {
         }
 
         // Restore only a cache entry that belongs to this resident.
+        SosRequest? initialRequest;
+
         try {
           final cached = await _cache.read(userId);
 
@@ -94,7 +96,8 @@ class TrackingService {
           if (cached != null &&
               cached.isActive &&
               cached.residentId == userId) {
-            controller.add(cached.asCached());
+            initialRequest = cached.asCached();
+            controller.add(initialRequest);
           }
         } catch (_) {
           // Cache failures must not prevent live tracking.
@@ -102,18 +105,19 @@ class TrackingService {
 
         if (generation != currentGeneration) return;
 
-        final nextSubscription = _watchUser(userId).listen(
-          (request) {
-            if (generation == currentGeneration) {
-              controller.add(request);
-            }
-          },
-          onError: (Object error, StackTrace stackTrace) {
-            if (generation == currentGeneration) {
-              controller.addError(error, stackTrace);
-            }
-          },
-        );
+        final nextSubscription =
+            _watchUser(userId, initialRequest: initialRequest).listen(
+              (request) {
+                if (generation == currentGeneration) {
+                  controller.add(request);
+                }
+              },
+              onError: (Object error, StackTrace stackTrace) {
+                if (generation == currentGeneration) {
+                  controller.addError(error, stackTrace);
+                }
+              },
+            );
 
         if (generation == currentGeneration) {
           requestSubscription = nextSubscription;
@@ -146,8 +150,11 @@ class TrackingService {
     });
   }
 
-  Stream<SosRequest?> _watchUser(String userId) async* {
-    SosRequest? lastKnown;
+  Stream<SosRequest?> _watchUser(
+    String userId, {
+    SosRequest? initialRequest,
+  }) async* {
+    SosRequest? lastKnown = initialRequest;
 
     while (true) {
       var emittedCachedFallback = false;

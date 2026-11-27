@@ -293,6 +293,95 @@ void main() {
     });
   });
   group('TrackingService review regressions', () {
+    test('restored cache survives first connection failure and is replaced by live data', () async {
+      SharedPreferences.setMockInitialValues({});
+      final cache = TrackingRequestCache();
+      await cache.write('resident-123', makeRequest('on_the_way', eta: 15));
+
+      final secondReady = Completer<void>();
+      final secondController = StreamController<List<Map<String, dynamic>>>(
+        onListen: () {
+          if (!secondReady.isCompleted) secondReady.complete();
+        },
+      );
+
+      final cachedReceived = Completer<SosRequest>();
+      final liveReceived = Completer<SosRequest>();
+      final errors = <Object>[];
+      var attempts = 0;
+
+      final service = TrackingService.forTesting(
+        cache: cache,
+        requestStreamFactory: (userId) {
+          attempts++;
+
+          if (attempts == 1) {
+            return Stream<List<Map<String, dynamic>>>.error(
+              StateError('First connection failed'),
+            );
+          }
+
+          return secondController.stream;
+        },
+        userIdStreamFactory: () => Stream<String?>.value('resident-123'),
+        reconnectDelay: const Duration(milliseconds: 10),
+      );
+
+      final subscription = service.watchActiveRequest().listen(
+        (request) {
+          if (request == null) return;
+
+          if (request.isCached && !cachedReceived.isCompleted) {
+            cachedReceived.complete(request);
+          } else if (!request.isCached && !liveReceived.isCompleted) {
+            liveReceived.complete(request);
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          errors.add(error);
+        },
+      );
+
+      try {
+        final restored = await cachedReceived.future.timeout(
+          const Duration(seconds: 5),
+        );
+
+        expect(restored.id, 'request-123');
+        expect(restored.lastKnownEtaMinutes, 15);
+        expect(restored.isCached, isTrue);
+
+        await secondReady.future.timeout(const Duration(seconds: 5));
+        expect(attempts, 2);
+
+        // The first connection failure must not replace cached data
+        // with a stream error.
+        expect(errors, isEmpty);
+
+        secondController.add([
+          {
+            'id': 'server-cold-start-request',
+            'resident_id': 'resident-123',
+            'help_type': 'Flood',
+            'status': 'on_the_way',
+            'last_known_eta_minutes': 4,
+            'created_at': DateTime.now().toIso8601String(),
+          },
+        ]);
+
+        final live = await liveReceived.future.timeout(
+          const Duration(seconds: 5),
+        );
+
+        expect(live.id, 'server-cold-start-request');
+        expect(live.lastKnownEtaMinutes, 4);
+        expect(live.isCached, isFalse);
+      } finally {
+        await subscription.cancel();
+        await secondController.close();
+      }
+    });
+
     test('first live stream error reconnects and subscribes again', () async {
       final secondReady = Completer<void>();
       final secondController = StreamController<List<Map<String, dynamic>>>(
