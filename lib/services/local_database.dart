@@ -264,11 +264,5 @@ class LocalDatabase {
       where: 'id = ?',
       whereArgs: [id],
     );
-    return db.insert('offline_queue', {
-      'request_type': requestType,
-      'payload': payload,
-      'status': 'pending',
-      'created_at': DateTime.now().toIso8601String(),
-    });
   }
 }
