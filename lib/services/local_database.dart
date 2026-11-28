@@ -1,9 +1,12 @@
 import 'dart:math';
 
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
-
 import '../models/offline_item.dart';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 
 class LocalDatabase {
   LocalDatabase._();
@@ -12,7 +15,17 @@ class LocalDatabase {
 
   static Database? _database;
 
+  static const String _webQueuePrefix = 'rqf307.offline_queue.item.';
+  static const String _webNextIdKey = 'rqf307.offline_queue.next_id';
+
   Future<Database> get database async {
+    if (kIsWeb) {
+      throw UnsupportedError(
+        'SQLite database is unavailable on web. '
+        'Use the LocalDatabase queue methods instead.',
+      );
+    }
+
     if (_database != null) return _database!;
 
     _database = await _initDatabase();
@@ -23,7 +36,7 @@ class LocalDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'resqflood.db');
 
-    return await openDatabase(
+    return openDatabase(
       path,
       version: 2,
       onCreate: (db, version) async {
@@ -101,6 +114,24 @@ class LocalDatabase {
 
   /// Counts items still waiting to sync (pending or failed).
   Future<int> getQueuedCount() async {
+    if (kIsWeb) {
+      final preferences = await SharedPreferences.getInstance();
+
+      return preferences.getKeys().where((key) {
+        if (!key.startsWith(_webQueuePrefix)) return false;
+
+        final raw = preferences.getString(key);
+        if (raw == null) return false;
+
+        try {
+          final item = jsonDecode(raw) as Map<String, dynamic>;
+          return item['status'] == 'pending';
+        } catch (_) {
+          return false;
+        }
+      }).length;
+    }
+
     final db = await database;
 
     final result = await db.rawQuery(
@@ -119,6 +150,26 @@ class LocalDatabase {
     String? clientId,
     DateTime? createdAt,
   }) async {
+    if (kIsWeb) {
+      final preferences = await SharedPreferences.getInstance();
+      final id = preferences.getInt(_webNextIdKey) ?? 1;
+
+      await preferences.setInt(_webNextIdKey, id + 1);
+
+      await preferences.setString(
+        '$_webQueuePrefix$id',
+        jsonEncode({
+          'id': id,
+          'request_type': requestType,
+          'payload': payload,
+          'status': 'pending',
+          'created_at': DateTime.now().toIso8601String(),
+        }),
+      );
+
+      return id;
+    }
+
     final db = await database;
     final resolvedClientId = clientId ?? generateFixedId();
 
@@ -213,5 +264,11 @@ class LocalDatabase {
       where: 'id = ?',
       whereArgs: [id],
     );
+    return db.insert('offline_queue', {
+      'request_type': requestType,
+      'payload': payload,
+      'status': 'pending',
+      'created_at': DateTime.now().toIso8601String(),
+    });
   }
 }
