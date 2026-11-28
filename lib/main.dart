@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/sync_service.dart';
 
 import 'core/app_routes.dart';
 import 'core/auth_gate.dart';
@@ -27,6 +28,8 @@ Future<void> main() async {
     url: _supabaseUrl,
     publishableKey: _supabaseAnonKey,
   );
+
+  await SyncService.instance.start();
 
   runApp(const ResQFloodApp());
 }
